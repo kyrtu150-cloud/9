@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-base: 10 7 5;
+    --bg-secondary: 26 15 10;
+    --accent: 255 107 26;
+    --accent-glow: 255 107 26 / 0.4;
+    --text-primary: 255 255 255;
+    --text-secondary: 184 184 184;
+    --text-muted: 107 107 107;
+    --card-bg: 20 12 8 / 0.55;
+    --card-border: 255 107 26 / 0.25;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg-base text-text-primary font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse 70% 50% at 10% 10%, rgba(255, 107, 26, 0.08), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 90% 90%, rgba(255, 107, 26, 0.05), transparent 60%);
+    min-height: 100svh;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(255, 107, 26, 0.35);
+    color: white;
+  }
+
+  /* Кастомный скролл */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0a0705; }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #ff6b1a, #d1500f);
+    border-radius: 999px;
+  }
+}
+
+@layer components {
+  /* Pill-навигация (стеклянная) */
+  .pill {
+    @apply rounded-pill border border-white/10 bg-white/[0.03] backdrop-blur-2xl;
+  }
+
+  /* Glass-карточка */
+  .glass-card {
+    @apply relative rounded-card border border-card-border bg-card-bg backdrop-blur-2xl shadow-accent;
+  }
+  .glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(140deg, rgba(255, 107, 26, 0.45), transparent 35%, transparent 65%, rgba(255, 107, 26, 0.25));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Анимированная conic-обводка для подсветки */
+  .glow-border {
+    position: relative;
+    isolation: isolate;
+  }
+  .glow-border::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(from var(--angle, 0deg), transparent 0deg, #ff6b1a 90deg, transparent 180deg, #ff8a3d 270deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0.7;
+    animation: angle-spin 6s linear infinite;
+    z-index: -1;
+  }
+
+  @property --angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes angle-spin {
+    to { --angle: 360deg; }
+  }
+
+  /* CTA-кнопка */
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-accent px-6 py-3 font-medium text-bg-base
+      transition-all duration-300 hover:bg-accent-hover hover:shadow-accent-strong active:scale-[0.98]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill border border-white/15 bg-white/[0.03]
+      px-6 py-3 font-medium text-white backdrop-blur-xl transition-all duration-300
+      hover:bg-white/10 hover:border-white/25;
+  }
+
+  /* Noise overlay глобальный */
+  .noise-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+  }
+
+  /* Текстовые утилиты */
+  .text-display {
+    @apply font-display uppercase tracking-tight leading-[0.85];
+  }
+
+  .h-section {
+    @apply text-display text-5xl md:text-7xl lg:text-8xl;
+  }
+
+  /* Sunset background fade */
+  .sunset-bg {
+    background:
+      radial-gradient(ellipse 90% 60% at 50% 100%, rgba(255, 107, 26, 0.55), transparent 70%),
+      radial-gradient(ellipse 70% 40% at 50% 50%, rgba(255, 138, 61, 0.25), transparent 60%);
+  }
+
+  /* TV scanlines */
+  .scanlines {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.08) 2px,
+      rgba(0, 0, 0, 0.08) 3px
+    );
+  }
+}
+
+@layer utilities {
+  .container-wide {
+    @apply mx-auto w-full max-w-[1440px] px-5 lg:px-10;
+  }
+  .mask-fade-y {
+    mask-image: linear-gradient(180deg, black 80%, transparent 100%);
+  }
+}

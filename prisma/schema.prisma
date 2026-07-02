@@ -1,0 +1,123 @@
+// JOOZ.ai Studio — схема БД (SQLite-прототип)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── NextAuth core ─────────────────────────────────────────────────────
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+// ─── User + кредиты + подписка ────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("user") // user | admin
+  credits       Int       @default(10)     // онбординг-бонус
+  plan          String    @default("free") // free | start | pro | business
+  planRenewsAt  DateTime?
+  createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  transactions  Transaction[]
+  tickets       Ticket[]
+}
+
+// ─── Проекты и генерации ──────────────────────────────────────────────
+model Project {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // cover | funnel | video | infographic
+  title       String
+  prompt      String
+  style       String?
+  status      String   @default("draft") // draft | hero | full | done
+  heroImageId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images      GeneratedImage[]
+}
+
+model GeneratedImage {
+  id        String   @id @default(cuid())
+  projectId String
+  url       String
+  prompt    String
+  variant   Int      @default(0)
+  isHero    Boolean  @default(false)
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// ─── Транзакции (моки) ────────────────────────────────────────────────
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   // subscription | credits
+  amount    Int      // в копейках
+  credits   Int      @default(0)
+  status    String   @default("pending") // pending | paid | failed
+  meta      String?  // JSON
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Поддержка ────────────────────────────────────────────────────────
+model Ticket {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String
+  message   String
+  status    String   @default("open") // open | in_progress | closed
+  reply     String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── CMS: контент лендинга ────────────────────────────────────────────
+model ContentBlock {
+  key       String   @id     // hero.title, features.card1.title и т.д.
+  value     String
+  updatedAt DateTime @updatedAt
+}
