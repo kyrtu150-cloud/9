@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/require-user";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +24,21 @@ export default async function ProjectPage({ params }: { params: { id: string } }
         <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-accent/85">{project.type}</div>
         <h1 className="mt-2 font-display text-4xl uppercase text-white">{project.title}</h1>
         <p className="mt-2 text-white/55 text-sm max-w-2xl">{project.prompt}</p>
-        {project.style && (
-          <div className="mt-3 inline-flex rounded-pill bg-accent/12 border border-accent/30 px-3 py-1 text-xs text-accent">
-            Стиль: {project.style}
-          </div>
-        )}
+        <div className="mt-3 flex items-center gap-3 flex-wrap">
+          {project.style && (
+            <div className="inline-flex rounded-pill bg-accent/12 border border-accent/30 px-3 py-1 text-xs text-accent">
+              Стиль: {project.style}
+            </div>
+          )}
+          <Link
+            href={`/app/${project.type}?prompt=${encodeURIComponent(project.prompt)}${
+              project.style ? `&style=${encodeURIComponent(project.style.split(" · ")[0])}` : ""
+            }`}
+            className="inline-flex items-center gap-1.5 rounded-pill border border-white/15 px-3 py-1 text-xs text-white/80 hover:border-accent/60 hover:text-accent transition-colors"
+          >
+            <RefreshCw className="h-3 w-3" /> Повторить с этим промтом
+          </Link>
+        </div>
       </header>
 
       <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

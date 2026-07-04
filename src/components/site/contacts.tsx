@@ -1,15 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, MessageCircle } from "lucide-react";
 import { Magnetic } from "@/components/ui/magnetic";
 import type { Content } from "@/lib/content";
 import { c } from "@/lib/content";
-
-const BG_IMG =
-  "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&w=1600&q=80";
 
 export function Contacts({ content }: { content: Content }) {
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "err">("idle");
@@ -33,12 +29,12 @@ export function Contacts({ content }: { content: Content }) {
 
   return (
     <section id="contacts" className="relative isolate py-24 lg:py-36 overflow-hidden">
-      {/* Фон */}
-      <div aria-hidden className="absolute inset-0">
-        <Image src={BG_IMG} alt="" fill className="object-cover" sizes="100vw" />
-        <div className="absolute inset-0 bg-bg-base/70" />
+      {/* Фон: собственный закатный градиент + солнце (без внешних фото) */}
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-bg-base via-[#3a1707] to-bg-base" />
+        <div className="absolute left-1/2 top-2/3 -translate-x-1/2 -translate-y-1/2 h-[60vw] w-[60vw] max-h-[700px] max-w-[700px] rounded-full bg-[radial-gradient(circle,rgba(255,154,77,0.55),rgba(255,107,26,0.25)_45%,transparent_70%)] blur-2xl" />
         <div className="absolute inset-0 sunset-bg opacity-70" />
-        <div className="absolute inset-0 scanlines opacity-20" />
+        <div className="absolute inset-0 scanlines opacity-15" />
       </div>
 
       <div className="container-wide relative">
@@ -86,6 +82,8 @@ export function Contacts({ content }: { content: Content }) {
             <Field name="name" label="Имя" placeholder="Как к вам обращаться" required />
             <Field name="contact" label="Email или телефон" placeholder="vy@brand.ru" required />
             <Field name="message" label="Сообщение" placeholder="Расскажите про продукт и задачу" multiline />
+            {/* Honeypot против спам-ботов: люди это поле не видят */}
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
 
             <button
               type="submit"

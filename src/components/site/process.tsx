@@ -71,12 +71,12 @@ export function Process({ content }: { content: Content }) {
                 />
                 <div className="relative">
                   <div className="flex items-baseline justify-between gap-4">
-                    <span className="font-display text-[8rem] lg:text-[10rem] leading-none text-accent/15">
+                    <span className="text-numeric text-[7rem] lg:text-[9rem] leading-none text-accent/15">
                       {step.n}
                     </span>
                     <step.Icon className="h-10 w-10 text-accent shrink-0" />
                   </div>
-                  <h3 className="mt-4 font-display text-3xl lg:text-4xl uppercase text-white">
+                  <h3 className="mt-4 text-display text-2xl lg:text-3xl text-white">
                     {step.title}
                   </h3>
                   <p className="mt-4 text-white/65 max-w-md leading-relaxed">{step.text}</p>

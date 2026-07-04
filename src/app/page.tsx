@@ -11,10 +11,37 @@ import { getContent } from "@/lib/content-server";
 
 export const dynamic = "force-dynamic";
 
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "JOOZ.ai Studio",
+      url: "https://jooz.ai",
+      description: "AI-студия продающего контента для маркетплейсов",
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "JOOZ.ai Studio",
+      applicationCategory: "DesignApplication",
+      operatingSystem: "Web",
+      offers: [
+        { "@type": "Offer", name: "Start", price: "1990", priceCurrency: "RUB" },
+        { "@type": "Offer", name: "Pro", price: "4990", priceCurrency: "RUB" },
+        { "@type": "Offer", name: "Business", price: "12990", priceCurrency: "RUB" },
+      ],
+    },
+  ],
+};
+
 export default async function HomePage() {
   const content = await getContent();
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <Nav ctaLabel={content["nav.cta"]} loginLabel={content["nav.login"]} />
       <main>
         <Hero content={content} />

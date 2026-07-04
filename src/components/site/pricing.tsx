@@ -145,10 +145,10 @@ export function Pricing({ content }: { content: Content }) {
                 </div>
               </div>
 
-              <h3 className="mt-5 font-display text-3xl uppercase text-white">{plan.name}</h3>
+              <h3 className="mt-5 text-display text-2xl text-white">{plan.name}</h3>
 
               <div className="mt-5 flex items-baseline gap-2">
-                <span className="font-display text-5xl text-white">
+                <span className="text-numeric text-5xl text-white">
                   {formatPrice(yearly ? Math.round(plan.yearly / 12) : plan.monthly)}
                 </span>
                 <span className="text-white/55 text-sm">/мес</span>

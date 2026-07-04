@@ -61,7 +61,7 @@ export default function RegisterPage() {
       <form onSubmit={onSubmit} className="space-y-4">
         <AuthField name="name" label="Имя" placeholder="Как вас зовут" required />
         <AuthField name="email" type="email" label="Email" placeholder="vy@brand.ru" required />
-        <AuthField name="password" type="password" label="Пароль (от 6 символов)" placeholder="••••••••" required minLength={6} />
+        <AuthField name="password" type="password" label="Пароль (от 8 символов)" placeholder="••••••••" required minLength={8} />
         {error && <div className="text-sm text-rose-400">{error}</div>}
         <button type="submit" disabled={loading} className="btn-accent w-full justify-center">
           {loading ? "Создаём аккаунт..." : "Создать и войти"}

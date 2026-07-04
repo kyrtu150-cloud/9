@@ -54,6 +54,8 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email)
     return NextResponse.json({ ok: false, error: "Не авторизован" }, { status: 401 });
+  const { rateLimit, tooMany } = await import("@/lib/rate-limit");
+  if (!rateLimit(`batch:${session.user.email}`, 4, 60_000)) return tooMany();
 
   const { projectId, heroImageId } = Schema.parse(await req.json());
 

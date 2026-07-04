@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateImage } from "@/lib/openrouter";
+import { rateLimit, tooMany } from "@/lib/rate-limit";
 
 const Schema = z.object({ projectId: z.string().min(1) });
 
@@ -12,6 +13,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email)
     return NextResponse.json({ ok: false, error: "Не авторизован" }, { status: 401 });
+  if (!rateLimit(`studio:${session.user.email}`, 10, 60_000)) return tooMany();
 
   const { projectId } = Schema.parse(await req.json());
 

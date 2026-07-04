@@ -2,17 +2,26 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, clientIp, tooMany } from "@/lib/rate-limit";
 
 const Schema = z.object({
   name: z.string().min(2).max(80),
-  email: z.string().email(),
-  password: z.string().min(6).max(72),
+  email: z.string().email().max(200),
+  password: z.string().min(8).max(72),
 });
 
 export async function POST(req: Request) {
+  if (!rateLimit(`register:${clientIp(req)}`, 5, 60_000)) return tooMany();
+
   try {
-    const body = await req.json();
-    const { name, email, password } = Schema.parse(body);
+    const parsed = Schema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, error: "Проверьте данные: имя от 2 символов, корректный email, пароль от 8 символов" },
+        { status: 400 }
+      );
+    }
+    const { name, email, password } = parsed.data;
     const lower = email.toLowerCase();
 
     const exists = await prisma.user.findUnique({ where: { email: lower } });
@@ -32,7 +41,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 400 });
+  } catch {
+    // Не раскрываем внутренности ошибок наружу
+    return NextResponse.json({ ok: false, error: "Ошибка регистрации. Попробуйте позже." }, { status: 500 });
   }
 }

@@ -1,14 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { Camera, Layers, Film, BarChart3, Star, ArrowUpRight } from "lucide-react";
 import { Spotlight } from "@/components/ui/spotlight";
+import { SunsetArt, ArtTile } from "@/components/site/sunset-art";
 import type { Content } from "@/lib/content";
 import { c } from "@/lib/content";
-
-const FEATURE_IMAGE =
-  "https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&w=1200&q=80";
 
 const STYLE_CHIPS = ["Pinterest/Instagram", "Каталог", "Имидж", "Бренд"];
 
@@ -141,25 +138,25 @@ export function Features({ content }: { content: Content }) {
             </motion.div>
           </div>
 
-          {/* Правая колонка: вертикальное фото героини */}
+          {/* Правая колонка: брендовый арт + мини-превью стилей */}
           <div className="lg:col-span-4 lg:sticky lg:top-28">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-              className="relative aspect-[3/5] w-full overflow-hidden rounded-[28px]"
+              className="relative"
             >
-              <Image
-                src={FEATURE_IMAGE}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 400px"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-bg-base via-transparent to-transparent" />
-              <div className="absolute inset-0 mix-blend-color bg-[radial-gradient(ellipse_at_center,rgba(255,107,26,0.4),rgba(190,50,15,0.25))]" />
-              <div className="absolute inset-0 scanlines opacity-25 pointer-events-none" />
+              <SunsetArt className="aspect-[3/4] w-full rounded-[28px] border border-white/10" />
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                <ArtTile tone="orange" className="aspect-square rounded-xl border border-white/10" />
+                <ArtTile tone="teal" className="aspect-square rounded-xl border border-white/10" />
+                <ArtTile tone="warm" className="aspect-square rounded-xl border border-white/10" />
+                <ArtTile tone="gray" className="aspect-square rounded-xl border border-white/10" />
+              </div>
+              <div className="mt-2 text-center text-[10px] font-mono uppercase tracking-[0.25em] text-white/40">
+                4 стиля генерации
+              </div>
             </motion.div>
           </div>
         </div>

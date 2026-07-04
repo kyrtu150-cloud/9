@@ -1,43 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { Play, X, TrendingUp } from "lucide-react";
+import { Play, X, TrendingUp, Check } from "lucide-react";
+import { ArtTile } from "@/components/site/sunset-art";
 import type { Content } from "@/lib/content";
 import { c } from "@/lib/content";
 
-const BEFORE_IMG = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=70";
-const AFTER_IMG = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80";
-
-const FUNNEL_IMAGES = [
-  "https://images.unsplash.com/photo-1551489186-cf8726f514f8?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1556906781-9a412961c28c?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=600&q=70",
-];
-
-const VIDEO_THUMBS = [
-  "https://images.unsplash.com/photo-1496347315700-c4e29bcaca42?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1521146764736-56c929d59c83?auto=format&fit=crop&w=600&q=70",
-  "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=600&q=70",
-];
-
-const INFO_SAMPLES = [
-  "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=70",
-  "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=70",
-  "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=900&q=70",
-];
-
-const STYLE_MARQUEE = [
-  ...FUNNEL_IMAGES,
-  ...FUNNEL_IMAGES,
-];
+const STYLE_LABELS = ["Pinterest", "Каталог", "Имидж", "Бренд"] as const;
+const TONE_BY_STYLE: Record<string, "orange" | "teal" | "warm" | "gray"> = {
+  Pinterest: "warm",
+  "Каталог": "gray",
+  "Имидж": "teal",
+  "Бренд": "orange",
+};
 
 export function Cases({ content }: { content: Content }) {
   return (
@@ -76,7 +52,7 @@ export function Cases({ content }: { content: Content }) {
           metric={{ label: "Конверсия в покупку", value: "+34%" }}
           align="right"
         >
-          <Marquee items={STYLE_MARQUEE} />
+          <Marquee />
         </CaseBlock>
 
         {/* 4.3 Видео-сетка */}
@@ -87,7 +63,7 @@ export function Cases({ content }: { content: Content }) {
           metric={{ label: "Глубина просмотра", value: "+72%" }}
           align="left"
         >
-          <VideoGrid items={VIDEO_THUMBS} />
+          <VideoGrid />
         </CaseBlock>
 
         {/* 4.4 Инфографика */}
@@ -98,7 +74,7 @@ export function Cases({ content }: { content: Content }) {
           metric={{ label: "Время на карточку", value: "−85%" }}
           align="right"
         >
-          <InfographicCarousel items={INFO_SAMPLES} />
+          <InfographicCarousel />
         </CaseBlock>
       </div>
     </section>
@@ -132,14 +108,14 @@ function CaseBlock({
         <div className="font-mono text-xs uppercase tracking-[0.3em] text-accent/80">
           {index} / {kicker}
         </div>
-        <h3 className="mt-4 font-display uppercase text-3xl lg:text-5xl text-white leading-tight">
+        <h3 className="mt-4 text-display text-2xl lg:text-4xl text-white leading-tight">
           {title}
         </h3>
         <div className="mt-6 inline-flex items-center gap-3 glass-card px-5 py-3">
           <TrendingUp className="h-5 w-5 text-accent" />
           <div>
             <div className="text-xs text-white/55 uppercase tracking-wider">{metric.label}</div>
-            <div className="font-display text-2xl text-accent leading-none mt-0.5">{metric.value}</div>
+            <div className="text-numeric text-2xl text-accent leading-none mt-0.5">{metric.value}</div>
           </div>
         </div>
       </div>
@@ -148,6 +124,7 @@ function CaseBlock({
   );
 }
 
+/** Демо «до/после»: серая скучная карточка ↔ брендовый JOOZ-кадр. */
 function BeforeAfter() {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(50);
@@ -172,26 +149,34 @@ function BeforeAfter() {
   return (
     <div
       ref={ref}
-      className="relative aspect-[16/10] overflow-hidden rounded-card border border-white/10 select-none"
+      className="relative aspect-[16/10] overflow-hidden rounded-card border border-white/10 select-none touch-none"
       onPointerDown={() => (dragging.current = true)}
     >
-      <Image src={BEFORE_IMG} alt="До" fill className="object-cover" sizes="800px" />
-      <div
-        className="absolute inset-0 overflow-hidden"
-        style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
-      >
-        <Image src={AFTER_IMG} alt="После" fill className="object-cover" sizes="800px" />
+      {/* ДО (слева от ручки): плоско и серо */}
+      <div className="absolute inset-0 bg-[#2e2e2e] grid place-items-center">
+        <div className="h-2/3 w-1/3 rounded-lg bg-[#454545] shadow-inner" />
+        <div className="absolute bottom-6 left-[8%] text-white/35 text-sm">
+          Фото поставщика
+        </div>
+      </div>
+
+      {/* ПОСЛЕ (справа от ручки): брендовый закат */}
+      <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 0 0 ${pos}%)` }}>
+        <ArtTile tone="orange" className="absolute inset-0" />
+        <div className="absolute inset-0 grid place-items-center">
+          <div className="h-2/3 w-1/3 rounded-lg bg-gradient-to-b from-[#fff3e6] to-[#ffc599] shadow-accent-strong" />
+        </div>
+        <div className="absolute bottom-6 right-[8%] text-white text-sm font-medium drop-shadow">
+          Кадр из JOOZ.ai
+        </div>
       </div>
 
       {/* Лейблы */}
       <div className="absolute top-4 left-4 rounded-pill bg-bg-base/70 backdrop-blur px-3 py-1 text-xs font-mono uppercase text-white/85">До</div>
       <div className="absolute top-4 right-4 rounded-pill bg-accent/90 px-3 py-1 text-xs font-mono uppercase text-bg-base font-semibold">После JOOZ</div>
 
-      {/* Handle */}
-      <div
-        className="absolute inset-y-0 w-px bg-white pointer-events-none"
-        style={{ left: `${pos}%` }}
-      />
+      {/* Ручка слайдера */}
+      <div className="absolute inset-y-0 w-px bg-white pointer-events-none" style={{ left: `${pos}%` }} />
       <div
         className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-accent shadow-accent-strong grid place-items-center cursor-grab active:cursor-grabbing"
         style={{ left: `${pos}%` }}
@@ -209,40 +194,38 @@ function BeforeAfter() {
   );
 }
 
-function Marquee({ items }: { items: string[] }) {
+function Marquee() {
+  const tiles = Array.from({ length: 12 }, (_, i) => STYLE_LABELS[i % 4]);
   return (
     <div className="relative overflow-hidden mask-fade-y rounded-card">
       <div className="flex gap-4 animate-marquee hover:[animation-play-state:paused]" style={{ width: "200%" }}>
-        {items.map((src, i) => (
-          <div
+        {[...tiles, ...tiles].map((label, i) => (
+          <ArtTile
             key={i}
-            className="relative shrink-0 h-56 w-44 lg:h-72 lg:w-56 rounded-2xl overflow-hidden border border-white/10"
-          >
-            <Image src={src} alt="" fill className="object-cover" sizes="240px" />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg-base/70 via-transparent to-transparent" />
-            <div className="absolute bottom-2 left-2 rounded-pill bg-accent/85 px-2 py-0.5 text-[10px] font-mono uppercase text-bg-base font-semibold">
-              {["Pinterest", "Каталог", "Имидж", "Бренд"][i % 4]}
-            </div>
-          </div>
+            tone={TONE_BY_STYLE[label]}
+            label={label}
+            className="shrink-0 h-56 w-44 lg:h-72 lg:w-56 rounded-2xl border border-white/10"
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function VideoGrid({ items }: { items: string[] }) {
-  const [lightbox, setLightbox] = useState<string | null>(null);
+function VideoGrid() {
+  const [lightbox, setLightbox] = useState<number | null>(null);
+  const tones: ("orange" | "teal" | "warm")[] = ["orange", "teal", "warm", "teal", "orange", "warm"];
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {items.map((src, i) => (
+        {tones.map((tone, i) => (
           <button
             key={i}
-            onClick={() => setLightbox(src)}
+            onClick={() => setLightbox(i)}
             className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 group"
           >
-            <Image src={src} alt="" fill className="object-cover transition-transform duration-700 group-hover:scale-105" sizes="300px" />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg-base/80 to-transparent" />
+            <ArtTile tone={tone} className="absolute inset-0 transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-bg-base/70 to-transparent" />
             <div className="absolute inset-0 grid place-items-center opacity-80 group-hover:opacity-100 transition-opacity">
               <div className="h-12 w-12 rounded-full bg-accent grid place-items-center">
                 <Play className="h-5 w-5 text-bg-base fill-bg-base ml-0.5" />
@@ -251,7 +234,7 @@ function VideoGrid({ items }: { items: string[] }) {
           </button>
         ))}
       </div>
-      {lightbox && (
+      {lightbox !== null && (
         <div
           className="fixed inset-0 z-[200] bg-bg-base/85 backdrop-blur-xl grid place-items-center p-6"
           onClick={() => setLightbox(null)}
@@ -259,39 +242,59 @@ function VideoGrid({ items }: { items: string[] }) {
           <button className="absolute top-6 right-6 h-12 w-12 rounded-full border border-white/20 grid place-items-center hover:bg-white/10">
             <X className="h-5 w-5" />
           </button>
-          <div className="relative max-h-[90svh] aspect-[3/4] w-full max-w-md">
-            <Image src={lightbox} alt="" fill className="object-contain rounded-2xl" sizes="500px" />
-          </div>
+          <ArtTile
+            tone={tones[lightbox]}
+            label={`Видео-превью #${lightbox + 1}`}
+            className="max-h-[85svh] aspect-[3/4] w-full max-w-md rounded-2xl border border-white/15"
+          />
         </div>
       )}
     </>
   );
 }
 
-function InfographicCarousel({ items }: { items: string[] }) {
+/** Демо-инфографика: карточка товара + выезжающие плашки-факты. */
+function InfographicCarousel() {
   const [active, setActive] = useState(0);
+  const slides = [
+    { tone: "orange" as const, bullets: ["Гипоаллергенный состав", "Выдерживает −30°C", "Гарантия 2 года"] },
+    { tone: "teal" as const, bullets: ["10 000+ продаж", "Рейтинг 4.9", "Доставка за 1 день"] },
+    { tone: "warm" as const, bullets: ["Эко-материалы", "Сделано в России", "3 цвета в наличии"] },
+  ];
   return (
     <div>
       <div className="relative aspect-[16/10] overflow-hidden rounded-card border border-white/10">
-        {items.map((src, i) => (
+        {slides.map((slide, i) => (
           <motion.div
             key={i}
             initial={false}
-            animate={{ opacity: i === active ? 1 : 0, scale: i === active ? 1 : 1.05 }}
-            transition={{ duration: 0.6 }}
+            animate={{ opacity: i === active ? 1 : 0, scale: i === active ? 1 : 1.04 }}
+            transition={{ duration: 0.5 }}
             className="absolute inset-0"
+            style={{ pointerEvents: i === active ? "auto" : "none" }}
           >
-            <Image src={src} alt="" fill className="object-cover" sizes="800px" />
-            <div className="absolute inset-0 bg-gradient-to-r from-bg-base/60 via-transparent to-transparent" />
-            <div className="absolute left-6 bottom-6 max-w-xs">
-              <div className="font-display text-3xl text-white uppercase">Инфографика #{i + 1}</div>
-              <div className="text-white/65 mt-1 text-sm">Сборка из сгенерированных фото за один клик.</div>
+            <ArtTile tone={slide.tone} className="absolute inset-0" />
+            <div className="absolute inset-0 bg-gradient-to-r from-bg-base/70 via-bg-base/20 to-transparent" />
+            <div className="absolute left-6 top-1/2 -translate-y-1/2 space-y-2.5 max-w-[60%]">
+              <div className="text-display text-xl lg:text-3xl text-white">Инфографика #{i + 1}</div>
+              {slide.bullets.map((b, j) => (
+                <motion.div
+                  key={b}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={i === active ? { opacity: 1, x: 0 } : {}}
+                  transition={{ delay: 0.15 + j * 0.12 }}
+                  className="flex items-center gap-2 rounded-pill bg-bg-base/70 backdrop-blur px-3.5 py-2 text-sm text-white w-fit"
+                >
+                  <Check className="h-4 w-4 text-accent shrink-0" />
+                  {b}
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         ))}
       </div>
       <div className="mt-4 flex items-center gap-2">
-        {items.map((_, i) => (
+        {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => setActive(i)}

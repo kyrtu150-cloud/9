@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AppSidebar } from "@/components/app/sidebar";
+import { OnboardingTour } from "@/components/app/onboarding-tour";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppSidebar user={user ?? { email: session.user.email }} />
         <main className="flex-1 min-w-0">{children}</main>
       </div>
+      <OnboardingTour />
     </div>
   );
 }

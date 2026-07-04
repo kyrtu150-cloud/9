@@ -1,17 +1,18 @@
-import { Inter, Manrope, Oswald, Unbounded, JetBrains_Mono } from "next/font/google";
+import { Manrope, Oswald, Unbounded, JetBrains_Mono } from "next/font/google";
 
-// Display: Oswald — узкий мощный гротеск (заменяет Druk Wide Cyr)
-export const fontDisplay = Oswald({
+// Display: Unbounded — широкий мощный гротеск с кириллицей,
+// ближайший бесплатный аналог Druk Wide Cyr из ТЗ
+export const fontDisplay = Unbounded({
   subsets: ["latin", "cyrillic"],
-  weight: ["500", "600", "700"],
+  weight: ["500", "700", "800"],
   variable: "--font-display",
   display: "swap",
 });
 
-// Heading: Unbounded — вариативный, бренд-акцент
-export const fontHeading = Unbounded({
+// Heading: Oswald — узкий конденсированный, для подзаголовков и крупных цифр
+export const fontHeading = Oswald({
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600", "700"],
   variable: "--font-heading",
   display: "swap",
 });

@@ -50,12 +50,12 @@
 @layer components {
   /* Pill-навигация (стеклянная) */
   .pill {
-    @apply rounded-pill border border-white/10 bg-white/[0.03] backdrop-blur-2xl;
+    @apply rounded-pill border border-white/10 bg-white/[0.03] backdrop-blur-xl;
   }
 
-  /* Glass-карточка */
+  /* Glass-карточка (blur 24px по ТЗ = tailwind xl) */
   .glass-card {
-    @apply relative rounded-card border border-card-border bg-card-bg backdrop-blur-2xl shadow-accent;
+    @apply relative rounded-card border border-card-border bg-card-bg backdrop-blur-xl shadow-accent;
   }
   .glass-card::before {
     content: "";
@@ -124,11 +124,16 @@
 
   /* Текстовые утилиты */
   .text-display {
-    @apply font-display uppercase tracking-tight leading-[0.85];
+    @apply font-display font-bold uppercase leading-[0.95] tracking-[-0.02em];
   }
 
   .h-section {
-    @apply text-display text-5xl md:text-7xl lg:text-8xl;
+    @apply text-display text-4xl md:text-6xl lg:text-7xl;
+  }
+
+  /* Крупные цифры — конденсированный гротеск */
+  .text-numeric {
+    @apply font-heading font-semibold tracking-tight;
   }
 
   /* Sunset background fade */
@@ -156,5 +161,17 @@
   }
   .mask-fade-y {
     mask-image: linear-gradient(180deg, black 80%, transparent 100%);
+  }
+}
+
+/* Доступность: уважение к prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
