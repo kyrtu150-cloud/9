@@ -2,23 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wand2, Upload, Download, X } from "lucide-react";
 
 const STEPS = [
   {
-    Icon: Upload,
-    title: "1. Опиши задачу",
-    text: "Выбери инструмент в меню слева, опиши товар в промте и добавь фото-референс, если есть. Выбери стиль и формат кадра.",
+    index: "01",
+    title: "Опиши задачу",
+    text: "Выбери инструмент в меню слева, опиши товар в промт-баре снизу. Можно добавить фото-референс, стиль и формат кадра.",
   },
   {
-    Icon: Wand2,
-    title: "2. Утверди hero-кадр",
+    index: "02",
+    title: "Утверди hero-кадр",
     text: "Первый кадр стоит 1 кредит. Понравился — утверждай, и студия соберёт всю серию в едином стиле. Нет — перегенерируй.",
   },
   {
-    Icon: Download,
-    title: "3. Скачай и продавай",
-    text: "Готовые кадры скачиваются по одному или все сразу. Вся история хранится в «Проектах» — можно повторить любой промт.",
+    index: "03",
+    title: "Скачай и продавай",
+    text: "Кадры скачиваются по одному или все сразу. История — в «Проектах»: любой промт можно повторить в один клик.",
   },
 ];
 
@@ -61,22 +60,20 @@ export function OnboardingTour() {
           <button
             onClick={finish}
             aria-label="Пропустить тур"
-            className="absolute top-4 right-4 h-9 w-9 rounded-full border border-white/15 grid place-items-center text-white/60 hover:text-white hover:bg-white/10"
+            className="absolute top-4 right-4 text-white/50 hover:text-white text-lg"
           >
-            <X className="h-4 w-4" />
+            ✕
           </button>
 
-          <div className="mx-auto h-16 w-16 rounded-full bg-accent/15 border border-accent/40 grid place-items-center mb-5">
-            <s.Icon className="h-7 w-7 text-accent" />
-          </div>
-          <h2 className="text-display text-xl text-white">{s.title}</h2>
+          <div className="text-numeric text-6xl text-acid">{s.index}</div>
+          <h2 className="mt-3 text-display text-2xl text-white">{s.title}</h2>
           <p className="mt-3 text-white/70 leading-relaxed">{s.text}</p>
 
           <div className="mt-6 flex items-center justify-center gap-2">
             {STEPS.map((_, i) => (
               <span
                 key={i}
-                className={`h-1.5 rounded-full transition-all ${i === step ? "w-8 bg-accent" : "w-1.5 bg-white/25"}`}
+                className={`h-1.5 rounded-full transition-all ${i === step ? "w-8 bg-gradient-acid" : "w-1.5 bg-white/25"}`}
               />
             ))}
           </div>
@@ -89,7 +86,7 @@ export function OnboardingTour() {
               </>
             ) : (
               <button onClick={finish} className="btn-accent text-sm">
-                Начать творить 🚀
+                Начать творить →
               </button>
             )}
           </div>

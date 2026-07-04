@@ -3,35 +3,32 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Sparkles, Wand2, Check, RefreshCw, Download, Loader2,
-  Image as ImageIcon, ArrowRight, ArrowLeft, X, Upload, Trash2, Plus,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STYLE_OPTIONS = [
-  { id: "pinterest", label: "Pinterest", emoji: "🌅" },
-  { id: "catalog", label: "Каталог", emoji: "🧾" },
-  { id: "image", label: "Имидж", emoji: "💎" },
-  { id: "brand", label: "Бренд", emoji: "🔥" },
-  { id: "lifestyle", label: "Лайфстайл", emoji: "🌿" },
-  { id: "studio", label: "Студия", emoji: "📸" },
+  { id: "pinterest", label: "Pinterest" },
+  { id: "catalog", label: "Каталог" },
+  { id: "image", label: "Имидж" },
+  { id: "brand", label: "Бренд" },
+  { id: "lifestyle", label: "Лайфстайл" },
+  { id: "studio", label: "Студия" },
 ];
 
 const ASPECT_OPTIONS = [
-  { id: "3:4", label: "3:4", hint: "Карточка", cls: "aspect-[3/4]" },
-  { id: "1:1", label: "1:1", hint: "Квадрат", cls: "aspect-square" },
-  { id: "9:16", label: "9:16", hint: "Сторис", cls: "aspect-[9/16]" },
+  { id: "3:4", label: "3:4" },
+  { id: "1:1", label: "1:1" },
+  { id: "9:16", label: "9:16" },
 ];
 
-const ENHANCERS = [
-  "белый фон",
-  "студийный свет",
-  "макро-детали",
-  "лайфстайл-сцена",
-  "золотой час",
-  "высокая резкость",
+const EXAMPLE_PROMPTS = [
+  "Премиум-кроссовки на градиентном фоне, мягкий студийный свет, минимализм",
+  "Флакон парфюма в лучах закатного света, глянцевые блики, глубокие тени",
+  "Беспроводные наушники в неоновом свете, тёмный фон, киберпанк-настроение",
+  "Керамическая кружка на льняной скатерти, утренний свет, уют и лайфстайл",
 ];
+
+const BOOSTERS =
+  "коммерческая съёмка, мягкий свет, высокая детализация, чистая композиция, резкий фокус";
 
 const HERO_PHASES = ["Анализируем промт…", "Подбираем композицию…", "Рендерим кадр…"];
 
@@ -39,25 +36,25 @@ const MODE_META: Record<string, { title: string; kicker: string; desc: string; b
   cover: {
     title: "Генерация обложки",
     kicker: "01 / Обложка",
-    desc: "1 hero-кадр (1 кредит) + 9 вариантов после апрува (9 кредитов).",
+    desc: "1 hero-кадр (1 кредит) + 9 вариантов после апрува.",
     batchCount: 9,
   },
   funnel: {
     title: "Полная фотоворонка",
     kicker: "02 / Фотоворонка",
-    desc: "1 hero-кадр (1 кредит) + 14 ракурсов в едином стиле (14 кредитов).",
+    desc: "1 hero-кадр (1 кредит) + 14 ракурсов в едином стиле.",
     batchCount: 14,
   },
   video: {
     title: "Видео-обложка",
     kicker: "03 / Видео",
-    desc: "1 hero-кадр (1 кредит) + 3 кадра анимации (3 кредита). Видео собирается из них.",
+    desc: "1 hero-кадр (1 кредит) + 3 кадра анимации.",
     batchCount: 3,
   },
   infographic: {
     title: "Инфографика",
     kicker: "04 / Инфографика",
-    desc: "1 hero-кадр (1 кредит) + 2 варианта раскладки (2 кредита).",
+    desc: "1 hero-кадр (1 кредит) + 2 варианта раскладки.",
     batchCount: 2,
   },
 };
@@ -66,6 +63,23 @@ type Mode = keyof typeof MODE_META;
 type GenImage = { id: string; url: string; isHero?: boolean; approved?: boolean };
 type Project = { id: string; type: string; title: string; prompt: string; style?: string | null };
 type Phase = "idle" | "hero-loading" | "hero" | "batch-loading" | "done";
+
+const HISTORY_KEY = "jooz_prompt_history";
+
+function loadHistory(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(prompt: string) {
+  try {
+    const cur = loadHistory().filter((p) => p !== prompt);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([prompt, ...cur].slice(0, 8)));
+  } catch {}
+}
 
 export function Studio({
   mode,
@@ -92,16 +106,21 @@ export function Studio({
   const [batch, setBatch] = useState<GenImage[]>([]);
   const [credits, setCredits] = useState(initialCredits);
   const [error, setError] = useState<string | null>(null);
-  const [pageStart, setPageStart] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [phaseIdx, setPhaseIdx] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const aspectCls = ASPECT_OPTIONS.find((a) => a.id === aspect)?.cls ?? "aspect-[3/4]";
+  const aspectCls =
+    aspect === "1:1" ? "aspect-square" : aspect === "9:16" ? "aspect-[9/16]" : "aspect-[3/4]";
   const allImages = hero ? [hero, ...batch] : batch;
+  const busy = phase === "hero-loading" || phase === "batch-loading";
 
-  // Ротация фаз во время генерации hero
+  useEffect(() => setHistory(loadHistory()), []);
+
   useEffect(() => {
     if (phase !== "hero-loading") return;
     setPhaseIdx(0);
@@ -109,7 +128,6 @@ export function Studio({
     return () => clearInterval(t);
   }, [phase]);
 
-  // Клавиатура лайтбокса
   useEffect(() => {
     if (lightbox === null) return;
     const onKey = (e: KeyboardEvent) => {
@@ -137,20 +155,25 @@ export function Studio({
     reader.readAsDataURL(file);
   }
 
-  function addEnhancer(tag: string) {
+  function improvePrompt() {
     setPrompt((p) => {
-      const base = p.trim();
-      if (base.toLowerCase().includes(tag)) return p;
-      return base ? `${base}, ${tag}` : tag;
+      const base = p.trim().replace(/[,.\s]+$/, "");
+      if (!base) return p;
+      if (base.toLowerCase().includes("высокая детализация")) return p;
+      return `${base}, ${BOOSTERS}`;
     });
   }
 
   async function startGeneration() {
+    if (busy) return;
     if (prompt.trim().length < 3) {
       setError("Опишите задачу хотя бы парой слов.");
       return;
     }
     setError(null);
+    saveHistory(prompt.trim());
+    setHistory(loadHistory());
+    setHistoryOpen(false);
     setPhase("hero-loading");
     try {
       const res = await fetch("/api/studio/start", {
@@ -168,6 +191,7 @@ export function Studio({
       if (!res.ok) throw new Error(data.error || "Ошибка генерации");
       setProject(data.project);
       setHero(data.image);
+      setBatch([]);
       setCredits(data.creditsLeft);
       setPhase("hero");
       router.refresh();
@@ -178,7 +202,7 @@ export function Studio({
   }
 
   async function regenerateHero() {
-    if (!project) return;
+    if (!project || busy) return;
     setPhase("hero-loading");
     try {
       const res = await fetch("/api/studio/regenerate", {
@@ -199,7 +223,7 @@ export function Studio({
   }
 
   async function approveAndBatch() {
-    if (!project || !hero) return;
+    if (!project || !hero || busy) return;
     setPhase("batch-loading");
     try {
       const res = await fetch("/api/studio/batch", {
@@ -217,6 +241,24 @@ export function Studio({
       setError(e.message);
       setPhase("hero");
     }
+  }
+
+  async function toggleFavorite(img: GenImage) {
+    const next = new Set(favorites);
+    next.has(img.id) ? next.delete(img.id) : next.add(img.id);
+    setFavorites(next);
+    try {
+      await fetch("/api/studio/favorite", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ imageId: img.id }),
+      });
+    } catch {}
+  }
+
+  function useAsReference(img: GenImage) {
+    setReference(img.url);
+    setLightbox(null);
   }
 
   function downloadAll() {
@@ -237,79 +279,104 @@ export function Studio({
     setHero(null);
     setBatch([]);
     setProject(null);
-    setPrompt("");
-    setReference(null);
-    setPageStart(0);
     setLightbox(null);
   }
 
   return (
-    <div className="p-6 lg:p-10">
-      <header className="flex items-end justify-between flex-wrap gap-4 mb-8">
+    <div
+      className="flex flex-col h-[100svh]"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        acceptFile(e.dataTransfer.files?.[0]);
+      }}
+    >
+      {/* Шапка */}
+      <header className="flex items-center justify-between gap-4 px-6 lg:px-10 pt-6 pb-4 shrink-0">
         <div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-accent/85">{meta.kicker}</div>
-          <h1 className="mt-2 text-display text-3xl lg:text-4xl text-white">{meta.title}</h1>
-          <p className="mt-2 text-white/65 max-w-xl">{meta.desc}</p>
+          <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-pink/90">{meta.kicker}</div>
+          <h1 className="mt-1 text-display text-2xl lg:text-3xl text-white">{meta.title}</h1>
         </div>
-        <div className="rounded-pill glass-card px-5 py-3 flex items-center gap-2 text-sm">
-          <Sparkles className="h-4 w-4 text-accent" />
-          <span className="font-mono text-white/55 uppercase text-xs">Баланс</span>
-          <span className="text-numeric text-xl text-accent">{credits}</span>
-          <span className="text-white/50 text-xs">кредитов</span>
+        <div className="flex items-center gap-3">
+          <span className="hidden md:block text-xs text-white/45 max-w-[260px] text-right">{meta.desc}</span>
+          <div className="rounded-pill border border-white/12 bg-white/[0.03] px-4 py-2 text-sm whitespace-nowrap">
+            <span className="text-numeric text-lg text-acid font-bold">{credits}</span>
+            <span className="text-white/50 text-xs ml-1.5">кредитов</span>
+          </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6">
-        {/* Центральное окно */}
-        <div className="glass-card min-h-[60svh] relative overflow-hidden">
-          <div aria-hidden className="absolute inset-0 sunset-bg opacity-30" />
+      {/* Холст */}
+      <div className="flex-1 min-h-0 px-6 lg:px-10 pb-3">
+        <div
+          className={cn(
+            "relative h-full rounded-card border bg-card-bg overflow-hidden transition-colors",
+            dragOver ? "border-pink" : "border-white/10"
+          )}
+        >
+          <div aria-hidden className="absolute inset-0 sunset-bg opacity-25" />
+          {dragOver && (
+            <div className="absolute inset-0 z-20 grid place-items-center bg-bg-base/70 backdrop-blur-sm border-2 border-dashed border-pink rounded-card">
+              <span className="text-display text-xl text-acid">Отпустите — станет референсом</span>
+            </div>
+          )}
 
-          <div className="relative p-6 lg:p-10 h-full flex flex-col">
+          <div className="relative h-full overflow-y-auto p-6 lg:p-8">
             <AnimatePresence mode="wait">
-              {/* IDLE */}
               {phase === "idle" && (
                 <motion.div
                   key="idle"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="flex-1 grid place-items-center text-center"
+                  className="h-full flex flex-col items-center justify-center text-center"
                 >
-                  <div className="max-w-md">
-                    <div className="mx-auto h-20 w-20 rounded-full bg-accent/15 border border-accent/40 grid place-items-center mb-5 animate-glow-pulse">
-                      <Wand2 className="h-8 w-8 text-accent" />
-                    </div>
-                    <h2 className="text-display text-xl text-white">Готов творить</h2>
-                    <p className="mt-2 text-white/65">
-                      Опишите задачу в поле справа, при желании добавьте фото-референс —
-                      и нажмите «Сгенерировать hero».
-                    </p>
+                  <h2 className="text-display text-3xl lg:text-5xl text-white">
+                    Что создаём <span className="text-acid">сегодня?</span>
+                  </h2>
+                  <p className="mt-3 text-white/60 max-w-md">
+                    Опишите товар в поле снизу — или начните с готового примера.
+                  </p>
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full">
+                    {EXAMPLE_PROMPTS.map((ex) => (
+                      <button
+                        key={ex}
+                        onClick={() => setPrompt(ex)}
+                        className="rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-left text-sm text-white/75 hover:border-pink/50 hover:text-white hover:bg-pink/5 transition-colors"
+                      >
+                        {ex}
+                      </button>
+                    ))}
                   </div>
                 </motion.div>
               )}
 
-              {/* HERO LOADING / RENDERED */}
               {(phase === "hero-loading" || phase === "hero") && (
                 <motion.div
                   key="hero"
-                  initial={{ opacity: 0, scale: 0.97 }}
+                  initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center"
+                  className="h-full flex flex-col lg:flex-row items-center justify-center gap-8"
                 >
-                  <div className={cn("relative w-full max-w-md mx-auto rounded-2xl overflow-hidden border border-accent/40", aspectCls)}>
+                  <div className={cn("relative w-full max-w-sm rounded-2xl overflow-hidden border border-pink/40 shrink-0", aspectCls)}>
                     {phase === "hero-loading" ? (
                       <div className="absolute inset-0 grid place-items-center bg-bg-secondary">
                         <Shimmer />
                         <div className="relative text-center px-6">
-                          <Loader2 className="h-10 w-10 text-accent animate-spin mx-auto" />
+                          <span className="mx-auto block h-10 w-10 rounded-full border-2 border-pink border-t-transparent animate-spin" />
                           <AnimatePresence mode="wait">
                             <motion.div
                               key={phaseIdx}
                               initial={{ opacity: 0, y: 8 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -8 }}
-                              className="mt-4 text-display text-base text-white"
+                              className="mt-4 text-display text-lg text-white"
                             >
                               {HERO_PHASES[phaseIdx]}
                             </motion.div>
@@ -319,26 +386,38 @@ export function Studio({
                       </div>
                     ) : hero ? (
                       <button className="absolute inset-0 group" onClick={() => setLightbox(0)}>
-                        <img src={hero.url} alt="Hero-кадр" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+                        <img
+                          src={hero.url}
+                          alt="Hero-кадр"
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                        />
                       </button>
                     ) : null}
-                    <div className="absolute top-3 left-3 rounded-pill bg-accent/90 px-3 py-1 text-[11px] font-mono uppercase text-bg-base font-semibold pointer-events-none">
-                      HERO
-                    </div>
+                    <span className="absolute top-3 left-3 rounded-pill bg-gradient-acid px-3 py-1 text-[10px] font-mono uppercase text-white font-semibold pointer-events-none">
+                      hero
+                    </span>
                   </div>
-                  <div>
-                    <div className="font-mono text-xs uppercase tracking-wider text-accent/80">Шаг 1 из 2</div>
-                    <h3 className="mt-1 text-display text-xl text-white">Утвердить hero-кадр?</h3>
-                    <p className="mt-2 text-white/65 max-w-sm">
-                      Если устраивает — жми «Утвердить». Если нет — «Перегенерировать»: ещё 1 кредит.
+
+                  <div className="max-w-sm text-center lg:text-left">
+                    <div className="font-mono text-xs uppercase tracking-wider text-pink/90">Шаг 1 из 2</div>
+                    <h3 className="mt-1 text-display text-2xl text-white">Утвердить hero-кадр?</h3>
+                    <p className="mt-2 text-white/60 text-sm">
+                      Утверждаешь — студия соберёт серию из {meta.batchCount} кадров в этом стиле.
+                      Не нравится — перегенерируй за 1 кредит.
                     </p>
                     {hero && phase === "hero" && (
-                      <div className="mt-6 flex flex-wrap gap-3">
-                        <button onClick={approveAndBatch} className="btn-accent">
-                          <Check className="h-4 w-4" /> Утвердить и собрать серию ({meta.batchCount} кред.)
+                      <div className="mt-6 flex flex-wrap gap-3 justify-center lg:justify-start">
+                        <button onClick={approveAndBatch} className="btn-accent text-sm">
+                          Утвердить · {meta.batchCount} кр.
                         </button>
-                        <button onClick={regenerateHero} className="btn-ghost">
-                          <RefreshCw className="h-4 w-4" /> Перегенерировать (1 кред.)
+                        <button onClick={regenerateHero} className="btn-ghost text-sm">
+                          Перегенерировать · 1 кр.
+                        </button>
+                        <button
+                          onClick={() => useAsReference(hero)}
+                          className="rounded-pill px-4 py-2 text-sm text-white/60 hover:text-pink transition-colors"
+                        >
+                          Сделать референсом
                         </button>
                       </div>
                     )}
@@ -346,27 +425,22 @@ export function Studio({
                 </motion.div>
               )}
 
-              {/* BATCH LOADING */}
               {phase === "batch-loading" && (
                 <motion.div
                   key="batch-loading"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex-1 grid place-items-center"
+                  className="h-full grid place-items-center"
                 >
                   <div className="text-center max-w-md">
-                    <div className="relative mx-auto h-24 w-24 mb-6">
-                      <div className="absolute inset-0 rounded-full border-2 border-accent/30" />
-                      <div className="absolute inset-0 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-                      <Wand2 className="absolute inset-0 m-auto h-10 w-10 text-accent" />
-                    </div>
-                    <h2 className="text-display text-xl text-white">Собираем серию</h2>
-                    <p className="mt-2 text-white/65">
-                      Параллельно генерируем {meta.batchCount} кадров в едином стиле hero. 30–60 секунд.
+                    <span className="mx-auto block h-14 w-14 rounded-full border-2 border-pink border-t-transparent animate-spin" />
+                    <h2 className="mt-6 text-display text-2xl text-white">Собираем серию</h2>
+                    <p className="mt-2 text-white/60">
+                      Параллельно генерируем {meta.batchCount} кадров. 30–60 секунд.
                     </p>
                     <div className="mt-6 grid grid-cols-4 gap-2 max-w-xs mx-auto">
                       {Array.from({ length: Math.min(meta.batchCount, 8) }).map((_, i) => (
-                        <div key={i} className="aspect-square rounded-md bg-accent/10 border border-accent/30 overflow-hidden relative">
+                        <div key={i} className="aspect-square rounded-md bg-pink/10 border border-pink/25 overflow-hidden relative">
                           <Shimmer delay={i * 0.15} />
                         </div>
                       ))}
@@ -375,185 +449,236 @@ export function Studio({
                 </motion.div>
               )}
 
-              {/* DONE */}
               {phase === "done" && (
                 <motion.div
                   key="done"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex-1 flex flex-col"
+                  className="min-h-full flex flex-col"
                 >
-                  <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                  <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
                     <div>
-                      <div className="font-mono text-xs uppercase tracking-wider text-accent">Готово!</div>
-                      <div className="text-display text-xl text-white">
-                        Серия из {allImages.length} кадров
-                      </div>
+                      <div className="font-mono text-xs uppercase tracking-wider text-pink">Готово</div>
+                      <div className="text-display text-2xl text-white">Серия из {allImages.length} кадров</div>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <button onClick={downloadAll} className="btn-accent text-sm">
-                        <Download className="h-4 w-4" /> Скачать все
+                    <div className="flex gap-4 text-sm">
+                      <button onClick={downloadAll} className="text-acid font-semibold hover:brightness-125 transition">
+                        Скачать все ↓
                       </button>
-                      <button onClick={reset} className="btn-ghost text-sm">
-                        <RefreshCw className="h-4 w-4" /> Новый проект
+                      <button onClick={reset} className="text-white/60 hover:text-white transition-colors">
+                        Новый проект +
                       </button>
                     </div>
                   </div>
-                  <FourPager
-                    images={allImages}
-                    pageStart={pageStart}
-                    setPageStart={setPageStart}
-                    onOpen={(globalIdx) => setLightbox(globalIdx)}
-                  />
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {allImages.map((img, i) => (
+                      <motion.div
+                        key={img.id}
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: Math.min(i * 0.05, 0.6) }}
+                        className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 group"
+                      >
+                        <button className="absolute inset-0" onClick={() => setLightbox(i)}>
+                          <img
+                            src={img.url}
+                            alt={`Кадр ${i + 1}`}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                          />
+                        </button>
+                        {img.isHero && (
+                          <span className="absolute top-2.5 left-2.5 rounded-pill bg-gradient-acid px-2.5 py-0.5 text-[10px] font-mono uppercase text-white font-semibold pointer-events-none">
+                            hero
+                          </span>
+                        )}
+                        <button
+                          onClick={() => toggleFavorite(img)}
+                          aria-label="В избранное"
+                          className={cn(
+                            "absolute top-2 right-2 h-8 w-8 rounded-full grid place-items-center text-base transition-colors backdrop-blur",
+                            favorites.has(img.id)
+                              ? "bg-pink text-white"
+                              : "bg-bg-base/60 text-white/60 opacity-0 group-hover:opacity-100 hover:text-pink"
+                          )}
+                        >
+                          ★
+                        </button>
+                        <div className="absolute inset-x-0 bottom-0 p-2.5 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-bg-base/80 to-transparent">
+                          <a
+                            href={img.url}
+                            download={`jooz-${project?.id}-${i + 1}.png`}
+                            className="rounded-pill bg-white/10 backdrop-blur px-3 py-1 text-xs text-white hover:bg-white/20"
+                          >
+                            Скачать
+                          </a>
+                          <button
+                            onClick={() => useAsReference(img)}
+                            className="rounded-pill bg-gradient-acid px-3 py-1 text-xs text-white font-medium"
+                          >
+                            Референс
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {error && (
-              <div className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                {error}
-              </div>
-            )}
           </div>
         </div>
+      </div>
 
-        {/* Правая панель */}
-        <aside className="space-y-4">
-          {/* Промт */}
-          <div className="glass-card p-5">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-accent">Промт</div>
+      {/* ── Нижний промт-док ─────────────────────────────────────── */}
+      <div className="shrink-0 px-6 lg:px-10 pb-6 relative z-30">
+        {error && (
+          <div className="mb-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-sm text-rose-200 flex items-center justify-between gap-4">
+            {error}
+            <button onClick={() => setError(null)} className="text-rose-300/70 hover:text-white">✕</button>
+          </div>
+        )}
+
+        {/* История промтов */}
+        <AnimatePresence>
+          {historyOpen && history.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="mb-2 rounded-2xl border border-white/12 bg-bg-secondary/95 backdrop-blur-xl p-2 max-h-56 overflow-y-auto"
+            >
+              {history.map((h) => (
+                <button
+                  key={h}
+                  onClick={() => {
+                    setPrompt(h);
+                    setHistoryOpen(false);
+                  }}
+                  className="block w-full text-left rounded-xl px-4 py-2.5 text-sm text-white/70 hover:bg-pink/10 hover:text-white transition-colors truncate"
+                >
+                  {h}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="glass-card !rounded-[24px] p-3 lg:p-4">
+          {/* Строка ввода */}
+          <div className="flex items-end gap-3">
+            {reference && (
+              <div className="relative shrink-0">
+                <img src={reference} alt="Референс" className="h-14 w-14 rounded-xl object-cover border border-pink/40" />
+                <button
+                  onClick={() => setReference(null)}
+                  aria-label="Убрать референс"
+                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-bg-base border border-white/25 text-[10px] text-white/80 hover:text-pink"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              disabled={phase === "hero-loading" || phase === "batch-loading"}
-              placeholder="Например: премиум-кроссовки на белом фоне, мягкий студийный свет, минимализм, фокус на текстуре..."
-              rows={5}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  startGeneration();
+                }
+              }}
+              disabled={busy}
+              placeholder="Опишите товар, фон, свет и настроение…"
+              rows={2}
               maxLength={2000}
-              className="mt-3 w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-accent/60 focus:bg-white/[0.05] transition-colors outline-none resize-none"
+              className="flex-1 bg-transparent text-[15px] text-white placeholder:text-white/30 outline-none resize-none leading-relaxed py-1"
             />
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {ENHANCERS.map((tag) => (
+            <button
+              onClick={startGeneration}
+              disabled={busy || prompt.trim().length < 3}
+              className="btn-accent shrink-0 !px-7 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {busy ? "Генерация…" : "Создать"}
+            </button>
+          </div>
+
+          {/* Строка настроек */}
+          <div className="mt-3 flex items-center gap-x-4 gap-y-2 flex-wrap text-[13px]">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-white/35 mr-1">Стиль</span>
+              {STYLE_OPTIONS.map((opt) => (
                 <button
-                  key={tag}
-                  onClick={() => addEnhancer(tag)}
-                  disabled={phase === "hero-loading" || phase === "batch-loading"}
-                  className="inline-flex items-center gap-1 rounded-pill border border-white/12 bg-white/[0.02] px-2.5 py-1 text-[11px] text-white/65 hover:border-accent/50 hover:text-accent transition-colors"
+                  key={opt.id}
+                  onClick={() => setStyle(opt.id)}
+                  disabled={busy}
+                  className={cn(
+                    "rounded-pill px-3 py-1 transition-colors",
+                    style === opt.id
+                      ? "bg-gradient-acid text-white font-medium"
+                      : "text-white/55 hover:text-white hover:bg-white/5"
+                  )}
                 >
-                  <Plus className="h-3 w-3" />
-                  {tag}
+                  {opt.label}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Референс */}
-          <div className="glass-card p-5">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-accent">
-              Референс <span className="text-white/40 normal-case">(необязательно)</span>
-            </div>
-            {reference ? (
-              <div className="mt-3 relative rounded-xl overflow-hidden border border-white/15">
-                <img src={reference} alt="Референс" className="w-full max-h-40 object-cover" />
+            <span className="hidden lg:block h-4 w-px bg-white/10" />
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-white/35 mr-1">Формат</span>
+              {ASPECT_OPTIONS.map((opt) => (
                 <button
-                  onClick={() => setReference(null)}
-                  className="absolute top-2 right-2 h-8 w-8 rounded-full bg-bg-base/80 border border-white/20 grid place-items-center text-white hover:text-rose-400"
-                  aria-label="Удалить референс"
+                  key={opt.id}
+                  onClick={() => setAspect(opt.id)}
+                  disabled={busy}
+                  className={cn(
+                    "rounded-pill px-3 py-1 transition-colors",
+                    aspect === opt.id
+                      ? "bg-gradient-acid text-white font-medium"
+                      : "text-white/55 hover:text-white hover:bg-white/5"
+                  )}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {opt.label}
                 </button>
-              </div>
-            ) : (
+              ))}
+            </div>
+
+            <span className="hidden lg:block h-4 w-px bg-white/10" />
+
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={busy}
+              className="text-white/55 hover:text-pink transition-colors"
+            >
+              {reference ? "Заменить референс" : "+ Референс"}
+            </button>
+            <button onClick={improvePrompt} disabled={busy || !prompt.trim()} className="text-white/55 hover:text-pink transition-colors disabled:opacity-40">
+              Улучшить промт
+            </button>
+            {history.length > 0 && (
               <button
-                onClick={() => fileRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  acceptFile(e.dataTransfer.files?.[0]);
-                }}
-                className={cn(
-                  "mt-3 w-full rounded-xl border border-dashed px-4 py-6 text-center transition-colors",
-                  dragOver ? "border-accent bg-accent/10" : "border-white/15 bg-white/[0.02] hover:border-accent/50"
-                )}
+                onClick={() => setHistoryOpen(!historyOpen)}
+                className={cn("transition-colors", historyOpen ? "text-pink" : "text-white/55 hover:text-pink")}
               >
-                <Upload className="h-5 w-5 text-accent mx-auto" />
-                <div className="mt-2 text-sm text-white/70">Перетащите фото или кликните</div>
-                <div className="text-[11px] text-white/40 mt-0.5">JPG / PNG / WebP, до 4 МБ</div>
+                История {historyOpen ? "▴" : "▾"}
               </button>
             )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => acceptFile(e.target.files?.[0])}
-            />
-          </div>
 
-          {/* Стиль + формат */}
-          <div className="glass-card p-5 space-y-4">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-accent">Стиль</div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {STYLE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setStyle(opt.id)}
-                    className={cn(
-                      "rounded-xl border px-3 py-2.5 text-sm transition-all text-left flex items-center gap-2",
-                      style === opt.id
-                        ? "border-accent bg-accent/15 text-white"
-                        : "border-white/10 bg-white/[0.02] text-white/70 hover:border-accent/40"
-                    )}
-                  >
-                    <span className="text-base">{opt.emoji}</span>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-accent">Формат кадра</div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {ASPECT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setAspect(opt.id)}
-                    className={cn(
-                      "rounded-xl border px-2 py-2.5 text-center transition-all",
-                      aspect === opt.id
-                        ? "border-accent bg-accent/15 text-white"
-                        : "border-white/10 bg-white/[0.02] text-white/70 hover:border-accent/40"
-                    )}
-                  >
-                    <div className="text-sm font-medium">{opt.label}</div>
-                    <div className="text-[10px] text-white/45">{opt.hint}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <span className="ml-auto hidden md:block font-mono text-[10px] text-white/30">
+              Ctrl+Enter — создать · hero 1 кр. · серия {meta.batchCount} кр.
+            </span>
           </div>
+        </div>
 
-          <button
-            onClick={startGeneration}
-            disabled={phase !== "idle" || prompt.trim().length < 3}
-            className="btn-accent w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Wand2 className="h-4 w-4" />
-            {phase === "idle" ? "Сгенерировать hero (1 кр.)" : "В процессе..."}
-          </button>
-
-          <div className="glass-card p-5 text-xs text-white/55 leading-relaxed">
-            <div className="flex items-center gap-2 text-accent font-mono uppercase tracking-wider text-[10px] mb-2">
-              <ImageIcon className="h-3.5 w-3.5" /> Как это работает
-            </div>
-            1. Опиши задачу, добавь референс и стиль.<br />
-            2. Получи hero-кадр (1 кредит).<br />
-            3. Утверди или перегенерируй.<br />
-            4. После апрува — серия из {meta.batchCount} в едином стиле.
-          </div>
-        </aside>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => acceptFile(e.target.files?.[0])}
+        />
       </div>
 
       {/* Лайтбокс */}
@@ -566,37 +691,33 @@ export function Studio({
             className="fixed inset-0 z-[200] bg-bg-base/90 backdrop-blur-xl grid place-items-center p-4 lg:p-10"
             onClick={() => setLightbox(null)}
           >
-            <button
-              className="absolute top-5 right-5 h-11 w-11 rounded-full border border-white/20 grid place-items-center hover:bg-white/10 text-white"
-              aria-label="Закрыть"
-            >
-              <X className="h-5 w-5" />
+            <button className="absolute top-5 right-6 text-2xl text-white/60 hover:text-white" aria-label="Закрыть">
+              ✕
             </button>
-
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setLightbox((lightbox - 1 + allImages.length) % allImages.length);
               }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/5 border border-white/15 grid place-items-center hover:bg-accent hover:text-bg-base text-white transition-colors"
+              className="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 text-3xl text-white/50 hover:text-pink transition-colors px-3"
               aria-label="Предыдущий кадр"
             >
-              <ArrowLeft className="h-5 w-5" />
+              ←
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setLightbox((lightbox + 1) % allImages.length);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/5 border border-white/15 grid place-items-center hover:bg-accent hover:text-bg-base text-white transition-colors"
+              className="absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 text-3xl text-white/50 hover:text-pink transition-colors px-3"
               aria-label="Следующий кадр"
             >
-              <ArrowRight className="h-5 w-5" />
+              →
             </button>
 
             <motion.div
               key={lightbox}
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               className="relative max-h-[82svh] max-w-3xl w-full"
               onClick={(e) => e.stopPropagation()}
@@ -604,19 +725,28 @@ export function Studio({
               <img
                 src={allImages[lightbox].url}
                 alt={`Кадр ${lightbox + 1}`}
-                className="mx-auto max-h-[82svh] rounded-2xl border border-white/15 object-contain"
+                className="mx-auto max-h-[80svh] rounded-2xl border border-white/15 object-contain"
               />
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3">
-                <span className="rounded-pill bg-bg-base/80 backdrop-blur px-3.5 py-1.5 text-xs font-mono text-white/80">
+              <div className="mt-4 flex items-center justify-center gap-4 text-sm">
+                <span className="font-mono text-xs text-white/50">
                   {lightbox + 1} / {allImages.length}
-                  {allImages[lightbox].isHero && <span className="text-accent ml-2">HERO</span>}
+                  {allImages[lightbox].isHero && <span className="text-pink ml-2">hero</span>}
                 </span>
+                <button
+                  onClick={() => toggleFavorite(allImages[lightbox])}
+                  className={cn("transition-colors", favorites.has(allImages[lightbox].id) ? "text-pink" : "text-white/60 hover:text-pink")}
+                >
+                  ★ {favorites.has(allImages[lightbox].id) ? "В избранном" : "В избранное"}
+                </button>
+                <button onClick={() => useAsReference(allImages[lightbox])} className="text-white/60 hover:text-pink transition-colors">
+                  Сделать референсом
+                </button>
                 <a
                   href={allImages[lightbox].url}
                   download={`jooz-${project?.id ?? "img"}-${lightbox + 1}.png`}
-                  className="rounded-pill bg-accent text-bg-base px-4 py-1.5 text-xs font-medium inline-flex items-center gap-1.5"
+                  className="text-acid font-semibold"
                 >
-                  <Download className="h-3.5 w-3.5" /> Скачать
+                  Скачать ↓
                 </a>
               </div>
             </motion.div>
@@ -627,84 +757,10 @@ export function Studio({
   );
 }
 
-function FourPager({
-  images,
-  pageStart,
-  setPageStart,
-  onOpen,
-}: {
-  images: GenImage[];
-  pageStart: number;
-  setPageStart: (n: number) => void;
-  onOpen: (globalIdx: number) => void;
-}) {
-  const total = images.length;
-  const page = images.slice(pageStart, pageStart + 4);
-  const canPrev = pageStart > 0;
-  const canNext = pageStart + 4 < total;
-
-  return (
-    <div className="flex flex-col flex-1">
-      <div className="grid grid-cols-2 gap-3 flex-1">
-        {page.map((img, i) => (
-          <motion.button
-            key={img.id}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.08 }}
-            onClick={() => onOpen(pageStart + i)}
-            className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 group text-left"
-          >
-            <img
-              src={img.url}
-              alt={`Кадр ${pageStart + i + 1}`}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            />
-            {img.isHero && (
-              <span className="absolute top-3 left-3 rounded-pill bg-accent/90 px-3 py-1 text-[10px] font-mono uppercase text-bg-base font-semibold">
-                HERO
-              </span>
-            )}
-            <span className="absolute inset-0 bg-gradient-to-t from-bg-base/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity grid items-end p-3">
-              <span className="justify-self-end rounded-pill bg-accent text-bg-base px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5">
-                Открыть
-              </span>
-            </span>
-          </motion.button>
-        ))}
-        {page.length < 4 &&
-          Array.from({ length: 4 - page.length }).map((_, i) => (
-            <div key={`empty-${i}`} className="aspect-square rounded-2xl border border-dashed border-white/10 bg-white/[0.02]" />
-          ))}
-      </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <button
-          onClick={() => setPageStart(Math.max(0, pageStart - 4))}
-          disabled={!canPrev}
-          className="btn-ghost text-sm disabled:opacity-30"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Предыдущие
-        </button>
-        <div className="text-xs font-mono text-white/55 uppercase">
-          {pageStart + 1}–{Math.min(pageStart + 4, total)} из {total}
-        </div>
-        <button
-          onClick={() => setPageStart(Math.min(Math.max(0, total - 4), pageStart + 4))}
-          disabled={!canNext}
-          className="btn-ghost text-sm disabled:opacity-30"
-        >
-          Следующие <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function Shimmer({ delay = 0 }: { delay?: number }) {
   return (
     <div
-      className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/20 to-transparent animate-[shimmer_1.8s_infinite]"
+      className="absolute inset-0 bg-gradient-to-r from-transparent via-pink/20 to-transparent animate-[shimmer_1.8s_infinite]"
       style={{ animationDelay: `${delay}s`, backgroundSize: "200% 100%" }}
     />
   );

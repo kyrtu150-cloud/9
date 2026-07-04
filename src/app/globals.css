@@ -28,13 +28,13 @@
     @apply bg-bg-base text-text-primary font-sans antialiased;
     background-image:
       radial-gradient(ellipse 70% 50% at 10% 10%, rgba(255, 107, 26, 0.08), transparent 60%),
-      radial-gradient(ellipse 70% 50% at 90% 90%, rgba(255, 107, 26, 0.05), transparent 60%);
+      radial-gradient(ellipse 70% 50% at 90% 90%, rgba(255, 46, 138, 0.07), transparent 60%);
     min-height: 100svh;
     overflow-x: hidden;
   }
 
   ::selection {
-    background: rgba(255, 107, 26, 0.35);
+    background: rgba(255, 46, 138, 0.4);
     color: white;
   }
 
@@ -42,7 +42,7 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: #0a0705; }
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #ff6b1a, #d1500f);
+    background: linear-gradient(180deg, #ff6b1a, #ff2e8a);
     border-radius: 999px;
   }
 }
@@ -63,7 +63,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(140deg, rgba(255, 107, 26, 0.45), transparent 35%, transparent 65%, rgba(255, 107, 26, 0.25));
+    background: linear-gradient(140deg, rgba(255, 107, 26, 0.45), transparent 35%, transparent 65%, rgba(255, 46, 138, 0.35));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
             mask-composite: exclude;
@@ -81,7 +81,7 @@
     inset: -1px;
     border-radius: inherit;
     padding: 1.5px;
-    background: conic-gradient(from var(--angle, 0deg), transparent 0deg, #ff6b1a 90deg, transparent 180deg, #ff8a3d 270deg, transparent 360deg);
+    background: conic-gradient(from var(--angle, 0deg), transparent 0deg, #ff6b1a 90deg, transparent 180deg, #ff2e8a 270deg, transparent 360deg);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
             mask-composite: exclude;
@@ -99,11 +99,11 @@
     to { --angle: 360deg; }
   }
 
-  /* CTA-кнопка */
+  /* CTA-кнопка: кислотный градиент оранж → фуксия */
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-accent px-6 py-3 font-medium text-bg-base
-      transition-all duration-300 hover:bg-accent-hover hover:shadow-accent-strong active:scale-[0.98]
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60;
+    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-gradient-acid px-6 py-3 font-semibold text-white
+      transition-all duration-300 hover:shadow-neon hover:brightness-110 active:scale-[0.98]
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink/60;
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-pill border border-white/15 bg-white/[0.03]
@@ -122,25 +122,31 @@
     mix-blend-mode: overlay;
   }
 
-  /* Текстовые утилиты */
+  /* Текстовые утилиты (v1: узкий мощный конденсированный) */
   .text-display {
-    @apply font-display font-bold uppercase leading-[0.95] tracking-[-0.02em];
+    @apply font-display font-bold uppercase tracking-tight leading-[0.85];
   }
 
   .h-section {
-    @apply text-display text-4xl md:text-6xl lg:text-7xl;
+    @apply text-display text-5xl md:text-7xl lg:text-8xl;
   }
 
-  /* Крупные цифры — конденсированный гротеск */
+  /* Крупные цифры */
   .text-numeric {
-    @apply font-heading font-semibold tracking-tight;
+    @apply font-display font-semibold tracking-tight;
   }
 
-  /* Sunset background fade */
+  /* Кислотный градиентный текст */
+  .text-acid {
+    @apply bg-gradient-acid bg-clip-text text-transparent;
+  }
+
+  /* Кислотный mesh-фон: оранж слева, фуксия справа */
   .sunset-bg {
     background:
-      radial-gradient(ellipse 90% 60% at 50% 100%, rgba(255, 107, 26, 0.55), transparent 70%),
-      radial-gradient(ellipse 70% 40% at 50% 50%, rgba(255, 138, 61, 0.25), transparent 60%);
+      radial-gradient(ellipse 70% 55% at 18% 100%, rgba(255, 107, 26, 0.5), transparent 65%),
+      radial-gradient(ellipse 70% 55% at 82% 100%, rgba(255, 46, 138, 0.45), transparent 65%),
+      radial-gradient(ellipse 55% 35% at 50% 45%, rgba(255, 87, 161, 0.15), transparent 60%);
   }
 
   /* TV scanlines */

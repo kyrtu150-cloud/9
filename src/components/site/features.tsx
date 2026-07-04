@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Camera, Layers, Film, BarChart3, Star, ArrowUpRight } from "lucide-react";
 import { Spotlight } from "@/components/ui/spotlight";
-import { SunsetArt, ArtTile } from "@/components/site/sunset-art";
+import { AuroraArt, ArtTile } from "@/components/site/sunset-art";
 import type { Content } from "@/lib/content";
 import { c } from "@/lib/content";
 
@@ -147,11 +147,11 @@ export function Features({ content }: { content: Content }) {
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
               className="relative"
             >
-              <SunsetArt className="aspect-[3/4] w-full rounded-[28px] border border-white/10" />
+              <AuroraArt className="aspect-[3/4] w-full rounded-[28px] border border-white/10" />
               <div className="mt-3 grid grid-cols-4 gap-2">
                 <ArtTile tone="orange" className="aspect-square rounded-xl border border-white/10" />
-                <ArtTile tone="teal" className="aspect-square rounded-xl border border-white/10" />
-                <ArtTile tone="warm" className="aspect-square rounded-xl border border-white/10" />
+                <ArtTile tone="pink" className="aspect-square rounded-xl border border-white/10" />
+                <ArtTile tone="violet" className="aspect-square rounded-xl border border-white/10" />
                 <ArtTile tone="gray" className="aspect-square rounded-xl border border-white/10" />
               </div>
               <div className="mt-2 text-center text-[10px] font-mono uppercase tracking-[0.25em] text-white/40">

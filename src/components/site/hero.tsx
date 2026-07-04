@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Magnetic } from "@/components/ui/magnetic";
 import { Spotlight } from "@/components/ui/spotlight";
-import { SunsetArt } from "@/components/site/sunset-art";
+import { AuroraArt } from "@/components/site/sunset-art";
 import type { Content } from "@/lib/content";
 import { c } from "@/lib/content";
 
@@ -31,7 +31,7 @@ export function Hero({ content }: { content: Content }) {
               initial={{ opacity: 0, y: 40, filter: "blur(12px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-              className="text-display text-[16vw] sm:text-[12vw] lg:text-[8.5vw] xl:text-[7.5rem] text-white leading-[0.9]"
+              className="text-display text-[18vw] sm:text-[14vw] lg:text-[11vw] xl:text-[10rem] text-white leading-[0.82]"
             >
               {c(content, "hero.titleLarge")}
             </motion.h1>
@@ -39,7 +39,7 @@ export function Hero({ content }: { content: Content }) {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.25 }}
-              className="mt-3 font-display font-medium text-2xl md:text-4xl lg:text-5xl text-accent lowercase tracking-wide"
+              className="mt-3 font-display text-3xl md:text-5xl lg:text-6xl text-acid lowercase tracking-wide"
             >
               {c(content, "hero.titleSmall")}
             </motion.div>
@@ -82,8 +82,8 @@ export function Hero({ content }: { content: Content }) {
               className="relative mx-auto aspect-[3/4] w-full max-w-[460px]"
             >
               {/* Свечение позади */}
-              <div className="absolute -inset-8 bg-[radial-gradient(closest-side,rgba(255,107,26,0.45),transparent_70%)] blur-2xl" />
-              <SunsetArt className="relative h-full w-full rounded-[36px] border border-white/10" />
+              <div className="absolute -inset-8 bg-[radial-gradient(closest-side,rgba(255,46,138,0.4),transparent_70%)] blur-2xl" />
+              <AuroraArt className="relative h-full w-full rounded-[36px] border border-white/10" />
             </motion.div>
           </div>
 
@@ -93,7 +93,7 @@ export function Hero({ content }: { content: Content }) {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.55 }}
-              className="font-mono text-xs uppercase tracking-[0.25em] text-teal whitespace-pre-line leading-relaxed"
+              className="font-mono text-xs uppercase tracking-[0.25em] text-pink whitespace-pre-line leading-relaxed"
             >
               {c(content, "hero.tagline")}
             </motion.div>

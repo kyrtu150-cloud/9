@@ -22,6 +22,12 @@ const config: Config = {
           deep: "#D1500F",
           glow: "rgba(255,107,26,0.4)",
         },
+        pink: {
+          DEFAULT: "#FF2E8A",
+          hover: "#FF57A1",
+          deep: "#D6136B",
+          glow: "rgba(255,46,138,0.4)",
+        },
         teal: {
           DEFAULT: "#2DD4BF",
           soft: "#5EEAD4",
@@ -49,11 +55,13 @@ const config: Config = {
       boxShadow: {
         accent: "0 30px 80px rgba(255,107,26,0.15)",
         "accent-strong": "0 30px 100px rgba(255,107,26,0.35)",
+        neon: "0 20px 70px rgba(255,46,138,0.3), 0 10px 40px rgba(255,107,26,0.2)",
         "card-inset": "inset 0 1px 0 0 rgba(255,255,255,0.06)",
       },
       backgroundImage: {
         "gradient-sunset":
-          "linear-gradient(180deg, #1A0F0A 0%, #FF6B1A 65%, #0A0705 100%)",
+          "linear-gradient(160deg, #1A0F0A 0%, #FF6B1A 45%, #FF2E8A 78%, #0A0505 100%)",
+        "gradient-acid": "linear-gradient(90deg, #FF6B1A 0%, #FF2E8A 100%)",
         "gradient-radial-accent":
           "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,107,26,0.35), transparent 60%)",
         noise:
@@ -84,6 +92,11 @@ const config: Config = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.92" },
         },
+        "blob-float": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(6%, -8%) scale(1.08)" },
+          "66%": { transform: "translate(-5%, 6%) scale(0.94)" },
+        },
         shimmer: {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
@@ -96,6 +109,8 @@ const config: Config = {
         "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         marquee: "marquee 40s linear infinite",
         "tv-flicker": "tv-flicker 4s ease-in-out infinite",
+        "blob-float": "blob-float 14s ease-in-out infinite",
+        "blob-float-slow": "blob-float 22s ease-in-out infinite reverse",
       },
     },
   },

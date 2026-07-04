@@ -8,10 +8,10 @@ import type { Content } from "@/lib/content";
 import { c } from "@/lib/content";
 
 const STYLE_LABELS = ["Pinterest", "Каталог", "Имидж", "Бренд"] as const;
-const TONE_BY_STYLE: Record<string, "orange" | "teal" | "warm" | "gray"> = {
-  Pinterest: "warm",
+const TONE_BY_STYLE: Record<string, "orange" | "pink" | "violet" | "warm" | "gray"> = {
+  Pinterest: "pink",
   "Каталог": "gray",
-  "Имидж": "teal",
+  "Имидж": "violet",
   "Бренд": "orange",
 };
 
@@ -160,9 +160,9 @@ function BeforeAfter() {
         </div>
       </div>
 
-      {/* ПОСЛЕ (справа от ручки): брендовый закат */}
+      {/* ПОСЛЕ (справа от ручки): кислотный бренд-градиент */}
       <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 0 0 ${pos}%)` }}>
-        <ArtTile tone="orange" className="absolute inset-0" />
+        <ArtTile tone="warm" className="absolute inset-0" />
         <div className="absolute inset-0 grid place-items-center">
           <div className="h-2/3 w-1/3 rounded-lg bg-gradient-to-b from-[#fff3e6] to-[#ffc599] shadow-accent-strong" />
         </div>
@@ -214,7 +214,7 @@ function Marquee() {
 
 function VideoGrid() {
   const [lightbox, setLightbox] = useState<number | null>(null);
-  const tones: ("orange" | "teal" | "warm")[] = ["orange", "teal", "warm", "teal", "orange", "warm"];
+  const tones: ("orange" | "pink" | "violet")[] = ["orange", "pink", "violet", "pink", "orange", "violet"];
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -258,8 +258,8 @@ function InfographicCarousel() {
   const [active, setActive] = useState(0);
   const slides = [
     { tone: "orange" as const, bullets: ["Гипоаллергенный состав", "Выдерживает −30°C", "Гарантия 2 года"] },
-    { tone: "teal" as const, bullets: ["10 000+ продаж", "Рейтинг 4.9", "Доставка за 1 день"] },
-    { tone: "warm" as const, bullets: ["Эко-материалы", "Сделано в России", "3 цвета в наличии"] },
+    { tone: "pink" as const, bullets: ["10 000+ продаж", "Рейтинг 4.9", "Доставка за 1 день"] },
+    { tone: "violet" as const, bullets: ["Эко-материалы", "Сделано в России", "3 цвета в наличии"] },
   ];
   return (
     <div>
